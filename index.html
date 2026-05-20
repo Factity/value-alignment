@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEDIER: Core Math & Variables</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+    <style>
+        body {
+            background: white;
+            font-family: 'Times New Roman', serif;
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 1rem;
+            line-height: 1.4;
+        }
+        h2 {
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 0.2rem;
+            margin-top: 1.5rem;
+        }
+        .eq { margin: 1em 0; }
+        .algo { margin: 1em 0; padding-left: 1.5em; border-left: 2px solid #ccc; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.6rem 0.4rem;
+            vertical-align: top;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            font-weight: 600;
+            border-bottom: 2px solid #aaa;
+        }
+        .var {
+            font-family: monospace;
+            font-size: 1.05rem;
+        }
+    </style>
+</head>
+<body>
+
+<h2>DEDIER: Mathematical Approach</h2>
+
+<div class="eq">
+\[
+\text{Student: } f_\theta = h \circ g_d,\quad 
+\mathbf{p}^{(\text{aux})}(x) = h_{\text{aux}}(g_d(x)),\quad 
+\hat{y}^{(\text{aux})}(x) = \arg\max \mathbf{p}^{(\text{aux})}(x)
+\]
+</div>
+
+<div class="eq">
+\[
+\text{Confidence margin: } \operatorname{cm}(\mathbf{p}) = \max_k p_k - \max_{k'\neq \arg\max p_k} p_{k'}
+\]
+</div>
+
+<div class="eq">
+\[
+\text{Instance weight: } 
+w(x)=
+\begin{cases}
+1, & \hat{y}^{(\text{aux})}(x)=y \\[4pt]
+\exp\!\big(\beta \cdot \operatorname{cm}(\mathbf{p}^{(\text{aux})}(x))^{\alpha}\big), & \text{otherwise}
+\end{cases}
+\]
+</div>
+
+<div class="eq">
+\[
+\mathcal{L}_{\text{DEDIER}} = \sum_{(x,y,w)} \Big[ (1-\lambda)\,\ell_{\text{ce}}(y^{(S)},y) \;+\; \lambda\, w\, \ell_{\text{kd}}(x) \Big]
+\]
+\[
+\ell_{\text{kd}}(x)=\tau^2\,\text{KL}\big(\sigma(y^{(S)}/\tau)\,\|\,\sigma(y^{(T)}/\tau)\big)
+\]
+</div>
+
+<div class="algo">
+<strong>Algorithm (short):</strong><br>
+Initialize \(w_i \leftarrow 1\).<br>
+For each epoch \(e\):<br>
+&nbsp;&nbsp;1. Update \(\theta\) with \(\nabla\mathcal{L}_{\text{DEDIER}}\)<br>
+&nbsp;&nbsp;2. If \(e \bmod L = 0\):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Retrain \(h_{\text{aux}}\) on \(\{(g_d(x_i), y_i)\}\)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Recompute \(w_i\) via \(w(x)\) above<br>
+Output: trained student \(f_\theta\).
+</div>
+
+<h2>Variables & Symbols</h2>
+
+<table>
+    <thead>
+        <tr><th>Variable</th><th>Description</th> </tr>
+    </thead>
+    <tbody>
+        <tr><td class="var">\(x\)</td><td>Input instance</td></tr>
+        <tr><td class="var">\(y\)</td><td>True label</td></tr>
+        <tr><td class="var">\(f_{\theta}\)</td><td>Student model parameterized by \(\theta\)</td></tr>
+        <tr><td class="var">\(\theta\)</td><td>Parameters of the student model</td></tr>
+        <tr><td class="var">\(g_d\)</td><td>Early layers up to depth \(d\) (feature extractor)</td></tr>
+        <tr><td class="var">\(d\)</td><td>Depth index for early readout (hyperparameter)</td></tr>
+        <tr><td class="var">\(h\)</td><td>Deeper layers after \(g_d\)</td></tr>
+        <tr><td class="var">\(h_{\text{aux}}\)</td><td>Auxiliary classifier (early readout head)</td></tr>
+        <tr><td class="var">\(\mathbf{p}^{(\text{aux})}(x)\)</td><td>Softmax output of auxiliary classifier</td></tr>
+        <tr><td class="var">\(\hat{y}^{(\text{aux})}(x)\)</td><td>Predicted class from early readout</td></tr>
+        <tr><td class="var">\(\operatorname{cm}(\mathbf{p})\)</td><td>Confidence margin: \(\max p_k - \max_{k'\neq \arg\max p_k} p_{k'}\)</td></tr>
+        <tr><td class="var">\(w(x)\)</td><td>Instance‑specific weight for distillation loss</td></tr>
+        <tr><td class="var">\(\alpha\)</td><td>Hyperparameter for margin sensitivity (\(\alpha>0\))</td></tr>
+        <tr><td class="var">\(\beta\)</td><td>Hyperparameter for weight scaling (\(\beta>0\))</td></tr>
+        <tr><td class="var">\(\mathcal{D}_w\)</td><td>Augmented dataset \(\{(x_i, y_i, w_i)\}\)</td></tr>
+        <tr><td class="var">\(\ell_{\text{ce}}\)</td><td>Cross‑entropy loss with true labels</td></tr>
+        <tr><td class="var">\(\ell_{\text{kd}}(x)\)</td><td>Distillation (teacher‑matching) loss</td></tr>
+        <tr><td class="var">\(y^{(S)}(x)\)</td><td>Student logits \(f_{\theta}(x)\)</td></tr>
+        <tr><td class="var">\(y^{(T)}(x)\)</td><td>Teacher logits \(\mathcal{T}(x)\)</td></tr>
+        <tr><td class="var">\(\sigma(\cdot)\)</td><td>Softmax function</td></tr>
+        <tr><td class="var">\(\tau\)</td><td>Temperature parameter</td></tr>
+        <tr><td class="var">\(\lambda\)</td><td>Balance between cross‑entropy and distillation (\(\lambda \in [0,1]\))</td></tr>
+        <tr><td class="var">\(L\)</td><td>Retraining interval (epochs)</td></tr>
+        <tr><td class="var">\(R\)</td><td>Number of epochs to retrain \(h_{\text{aux}}\)</td></tr>
+        <tr><td class="var">\(E_{\max}\)</td><td>Total training epochs</td></tr>
+        <tr><td class="var">\(\eta\)</td><td>Learning rate</td></tr>
+    </tbody>
+</table>
+
+<p style="margin-top:1.5em; font-size:0.85rem;">\(\alpha,\beta,\lambda,d,L,R,\tau,\eta\) are hyperparameters tuned via validation worst‑group accuracy.</p>
+
+</body>
+</html>
